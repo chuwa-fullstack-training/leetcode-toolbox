@@ -18,9 +18,11 @@
     "@radix-ui/react-tooltip": "^1.1.7",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
-    "autoprefixer": "10.4.20",
+    "@tanstack/react-query": "^5.66.9",
+    "axios": "^1.8.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dayjs": "^1.11.13",
     "lucide-react": "^0.474.0",
     "next": "latest",
     "next-themes": "^0.4.4",
@@ -32,12 +34,13 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.9",
     "@types/node": "22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "19.0.2",
     "postcss": "8.4.49",
     "tailwind-merge": "^2.5.2",
-    "tailwindcss": "3.4.17",
+    "tailwindcss": "^4.0.9",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.7.2"
   }
