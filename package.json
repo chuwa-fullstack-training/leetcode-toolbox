@@ -1,5 +1,9 @@
 {
   "private": true,
+  "author": {
+    "name": "Aaron Zhang"
+  },
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
