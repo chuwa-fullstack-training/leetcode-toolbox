@@ -16,7 +16,11 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
-import { saveLeetcodeSession } from './action';
+import {
+  checkExisting,
+  saveLeetcodeSession,
+  updateLeetcodeSession
+} from './action';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -36,6 +40,13 @@ export default function Page() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
+      const existing = await checkExisting(values.email, values.leetcodeId);
+      if (existing.length) {
+        await updateLeetcodeSession(existing[0].id, values.leetcodeSession);
+        toast.success('LeetCode session updated');
+        form.reset();
+        return;
+      }
       await saveLeetcodeSession(
         values.email,
         values.leetcodeId,

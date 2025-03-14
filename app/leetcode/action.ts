@@ -29,10 +29,33 @@ export async function saveLeetcodeSession(
   }
 }
 
+export async function updateLeetcodeSession(id: string, session: string) {
+  const supabase = await createClient();
+  const { data,error } = await supabase
+    .from('leetcode')
+    .update({ sessionStr: session })
+    .eq('id', id);
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+}
+
+export async function checkExisting(email: string, leetcodeId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('leetcode')
+    .select('*')
+    .eq('email', email)
+    .eq('leetcode_id', leetcodeId);
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+}
+
 export async function userProgressQuestionList(
-  filters: {
-    [key: string]: string | number;
-  },
+  filters: Record<string, string | number>,
   session: string
 ) {
   const query = `
