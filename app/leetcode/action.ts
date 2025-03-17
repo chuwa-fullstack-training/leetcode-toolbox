@@ -16,14 +16,14 @@ export async function getLeetcodeSession(userId: string) {
 }
 
 export async function saveLeetcodeSession(
-  email: string,
   leetcodeId: string,
+  name: string,
   session: string
 ) {
   const supabase = await createClient();
   const { error } = await supabase
     .from('leetcode')
-    .insert({ email, leetcode_id: leetcodeId, sessionStr: session });
+    .insert({ leetcode_id: leetcodeId, name, sessionStr: session });
   if (error) {
     throw new Error(error.message);
   }
@@ -41,12 +41,12 @@ export async function updateLeetcodeSession(id: string, session: string) {
   return data;
 }
 
-export async function checkExisting(email: string, leetcodeId: string) {
+export async function checkExisting(name: string, leetcodeId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('leetcode')
     .select('*')
-    .eq('email', email)
+    .eq('name', name)
     .eq('leetcode_id', leetcodeId);
   if (error) {
     throw new Error(error.message);

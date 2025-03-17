@@ -22,8 +22,8 @@ import {
 } from './action';
 
 const formSchema = z.object({
-  email: z.string().email('Invalid email address'),
   leetcodeId: z.string().min(1, 'LeetCode ID is required'),
+  name: z.string().min(1, 'Name is required'),
   leetcodeSession: z.string().min(1, 'LeetCode Session is required')
 });
 
@@ -31,15 +31,15 @@ export default function Page() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
       leetcodeId: '',
+      name: '',
       leetcodeSession: ''
     }
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const existing = await checkExisting(values.email, values.leetcodeId);
+      const existing = await checkExisting(values.leetcodeId, values.name);
       if (existing.length) {
         await updateLeetcodeSession(existing[0].id, values.leetcodeSession);
         toast.success('LeetCode session updated');
@@ -47,8 +47,8 @@ export default function Page() {
         return;
       }
       await saveLeetcodeSession(
-        values.email,
         values.leetcodeId,
+        values.name,
         values.leetcodeSession
       );
       toast.success('LeetCode session saved');
@@ -83,18 +83,14 @@ export default function Page() {
           >
             <FormField
               control={form.control}
-              name="email"
+              name="leetcodeId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>LeetCode ID</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="example@cool.com"
-                      type="email"
-                      {...field}
-                    />
+                    <Input placeholder="Leetcode ID" type="text" {...field} />
                   </FormControl>
-                  <FormDescription>email for LeetCode</FormDescription>
+                  <FormDescription>Leetcode ID</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -102,16 +98,14 @@ export default function Page() {
 
             <FormField
               control={form.control}
-              name="leetcodeId"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>LeetCode ID</FormLabel>
+                  <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="" type="text" {...field} />
+                    <Input placeholder="John Doe" type="text" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    LeetCode ID from your account setting
-                  </FormDescription>
+                  <FormDescription>First and last name</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

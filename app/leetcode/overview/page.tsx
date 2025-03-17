@@ -23,7 +23,7 @@ export default function LeetcodeOverview() {
     async function getLeetcodeSessions() {
       const { data } = await supabase
         .from('leetcode')
-        .select('id, email, leetcode_id, sessionStr, created_at');
+        .select('id, name, leetcode_id, sessionStr, created_at');
       setLeetcodeSessions(data);
     }
     getLeetcodeSessions();
@@ -42,7 +42,7 @@ export default function LeetcodeOverview() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Email</TableHead>
+                  <TableHead>Name</TableHead>
                   <TableHead>LeetCode ID</TableHead>
                   <TableHead>Session String</TableHead>
                   <TableHead>Created At</TableHead>
@@ -56,7 +56,7 @@ export default function LeetcodeOverview() {
                       router.push(`/leetcode/analytics?id=${session.id}`);
                     }}
                   >
-                    <TableCell>{session.email}</TableCell>
+                    <TableCell>{session.name}</TableCell>
                     <TableCell>{session.leetcode_id}</TableCell>
                     <TableCell className="max-w-xs truncate">
                       {session.sessionStr}
