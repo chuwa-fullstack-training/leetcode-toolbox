@@ -58,9 +58,9 @@ export const updateSession = async (request: NextRequest) => {
       return NextResponse.redirect(new URL('/sign-in', request.url));
     }
 
-    if (request.nextUrl.pathname.startsWith('/sign-up')) {
-      return NextResponse.redirect(new URL('/leetcode', request.url));
-    }
+    // if (request.nextUrl.pathname.startsWith('/sign-up')) {
+    //   return NextResponse.redirect(new URL('/leetcode', request.url));
+    // }
 
     if (request.nextUrl.pathname === '/' && !error) {
       return NextResponse.redirect(new URL('/protected', request.url));

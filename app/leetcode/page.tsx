@@ -15,15 +15,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
-import {
-  checkExisting,
-  saveLeetcodeSession,
-  updateLeetcodeSession
-} from './action';
+import { saveLeetcodeSession } from './action';
 
 const formSchema = z.object({
   leetcodeId: z.string().min(1, 'LeetCode ID is required'),
-  name: z.string().min(1, 'Name is required'),
   leetcodeSession: z.string().min(1, 'LeetCode Session is required')
 });
 
@@ -32,25 +27,13 @@ export default function Page() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       leetcodeId: '',
-      name: '',
       leetcodeSession: ''
     }
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const existing = await checkExisting(values.leetcodeId, values.name);
-      if (existing.length) {
-        await updateLeetcodeSession(existing[0].id, values.leetcodeSession);
-        toast.success('LeetCode session updated');
-        form.reset();
-        return;
-      }
-      await saveLeetcodeSession(
-        values.leetcodeId,
-        values.name,
-        values.leetcodeSession
-      );
+      await saveLeetcodeSession(values.leetcodeId, values.leetcodeSession);
       toast.success('LeetCode session saved');
       form.reset();
     } catch (error) {
@@ -60,7 +43,7 @@ export default function Page() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-10">
+    <div className="max-w-3xl mx-auto p-10">
       {form.formState.isSubmitSuccessful ? (
         <div
           className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative"
@@ -90,22 +73,6 @@ export default function Page() {
                   <FormControl>
                     <Input placeholder="Leetcode ID" type="text" {...field} />
                   </FormControl>
-                  <FormDescription>Leetcode ID</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" type="text" {...field} />
-                  </FormControl>
-                  <FormDescription>First and last name</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

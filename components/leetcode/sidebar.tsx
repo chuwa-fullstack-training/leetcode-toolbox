@@ -12,7 +12,12 @@ export function Sidebar() {
           >
             Configuration
           </Link>
-          {/* Add more navigation items here */}
+          <Link
+            href="/leetcode/overview"
+            className="block px-4 py-2 rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            Overview
+          </Link>
         </nav>
       </div>
     </div>

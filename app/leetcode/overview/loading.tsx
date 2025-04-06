@@ -23,7 +23,7 @@ export default function Loading() {
                 <TableHead>Email</TableHead>
                 <TableHead>LeetCode ID</TableHead>
                 <TableHead>Session String</TableHead>
-                <TableHead>Created At</TableHead>
+                <TableHead>Updated At</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

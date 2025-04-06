@@ -1,56 +1,119 @@
+'use client';
 import { signUpAction } from '@/app/actions';
-import { FormMessage, Message } from '@/components/form-message';
-import { SubmitButton } from '@/components/submit-button';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import Link from 'next/link';
-import { SmtpMessage } from '../smtp-message';
+import { PasswordInput } from '@/components/ui/password-input';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-export default async function Signup(props: {
-  searchParams: Promise<Message>;
-}) {
-  const searchParams = await props.searchParams;
-  if ('message' in searchParams) {
-    return (
-      <div className="w-full flex-1 flex items-center h-screen sm:max-w-md justify-center gap-2 p-4">
-        <FormMessage message={searchParams} />
-      </div>
-    );
+const formSchema = z.object({
+  fullname: z.string().regex(/^[a-zA-Z]+\s[a-zA-Z]+$/, 'Invalid name'),
+  email: z.string().email('Invalid email'),
+  password: z
+    .string()
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/, 'Invalid password')
+});
+
+export default function MyForm() {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      fullname: '',
+      email: '',
+      password: ''
+    }
+  });
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const formData = new FormData();
+      formData.append('fullname', values.fullname);
+      formData.append('email', values.email);
+      formData.append('password', values.password);
+      await signUpAction(formData);
+      // toast(
+      //   <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+      //     <code className="text-white">{JSON.stringify(values, null, 2)}</code>
+      //   </pre>
+      // );
+    } catch (error) {
+      console.error('Form submission error', error);
+      // toast.error('Failed to submit the form. Please try again.');
+    }
   }
 
   return (
-    <>
-      <form className="flex flex-col min-w-64 max-w-64 mx-auto">
-        <h1 className="text-2xl font-medium">Sign up</h1>
-        <p className="text-sm text text-foreground">
-          Already have an account?{' '}
-          <Link className="text-primary font-medium underline" href="/sign-in">
-            Sign in
-          </Link>
-        </p>
-        <div className="flex flex-col gap-2 [&>input]:mb-3 mt-8">
-          <Label htmlFor="email">Email</Label>
-          <Input name="email" placeholder="you@example.com" required />
-          <Label htmlFor="password">Password</Label>
-          <Input
-            type="password"
-            name="password"
-            placeholder="Your password"
-            minLength={6}
-            required
-          />
-          <div className="flex items-center space-x-2 my-2">
-            <Switch id="admin-mode" name="admin" />
-            <Label htmlFor="admin-mode">Create as admin user</Label>
-          </div>
-          <SubmitButton formAction={signUpAction} pendingText="Signing up...">
-            Sign up
-          </SubmitButton>
-          <FormMessage message={searchParams} />
-        </div>
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-8 max-w-3xl mx-auto py-10"
+      >
+        <FormField
+          control={form.control}
+          name="fullname"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="John Doe" type="text" {...field} />
+              </FormControl>
+              <FormDescription>This is your full name.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input placeholder="" type="email" {...field} />
+              </FormControl>
+
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <PasswordInput {...field} />
+              </FormControl>
+
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? (
+            <>
+              <span className="mr-2">Signing up...</span>
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </>
+          ) : (
+            'Submit'
+          )}
+        </Button>
       </form>
-      <SmtpMessage />
-    </>
+    </Form>
   );
 }

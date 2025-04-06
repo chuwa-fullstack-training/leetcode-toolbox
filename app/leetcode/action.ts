@@ -1,6 +1,22 @@
 'use server';
 import graphqlClient from '@/lib/graphql';
 import { createClient } from '@/utils/supabase/server';
+import { QueryData } from '@supabase/supabase-js';
+
+export async function updateUserLCInfo(sessionStr: string) {
+  const supabase = await createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from('leetcode')
+    .update({ sessionStr })
+    .eq('leetcode_id', user!.id);
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+}
 
 export async function getLeetcodeSession(userId: string) {
   const supabase = await createClient();
@@ -15,30 +31,63 @@ export async function getLeetcodeSession(userId: string) {
   return data.sessionStr;
 }
 
-export async function saveLeetcodeSession(
-  leetcodeId: string,
-  name: string,
-  session: string
-) {
+export async function saveLeetcodeSession(leetcodeId: string, session: string) {
   const supabase = await createClient();
-  const { error } = await supabase
-    .from('leetcode')
-    .insert({ leetcode_id: leetcodeId, name, sessionStr: session });
-  if (error) {
-    throw new Error(error.message);
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User not found');
   }
-}
 
-export async function updateLeetcodeSession(id: string, session: string) {
-  const supabase = await createClient();
-  const { data,error } = await supabase
-    .from('leetcode')
-    .update({ sessionStr: session })
-    .eq('id', id);
-  if (error) {
-    throw new Error(error.message);
+  const profileQuery = supabase
+    .from('profile')
+    .select('firstname,lastname')
+    .eq('user_id', user.id)
+    .single();
+  type Profile = QueryData<typeof profileQuery>;
+  const { data, error: profileError } = await profileQuery;
+  if (profileError) {
+    throw new Error(profileError.message);
   }
-  return data;
+  const { firstname, lastname } = data as Profile;
+
+  const { data: existingRecord, error: existingError } = await supabase
+    .from('leetcode')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+
+  if (existingError && existingError.code !== 'PGRST116') {
+    // PGRST116 indicates no rows found; ignore it
+    throw new Error(existingError.message);
+  }
+
+  if (existingRecord) {
+    const { error: updateError } = await supabase
+      .from('leetcode')
+      .update({
+        leetcode_id: leetcodeId,
+        sessionStr: session,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', user.id);
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+  } else {
+    // Insert a new record
+    const { error: insertError } = await supabase.from('leetcode').insert({
+      leetcode_id: leetcodeId,
+      user_id: user.id,
+      name: `${firstname} ${lastname}`,
+      sessionStr: session,
+      updated_at: new Date().toISOString()
+    });
+    if (insertError) {
+      throw new Error(insertError.message);
+    }
+  }
 }
 
 export async function checkExisting(name: string, leetcodeId: string) {

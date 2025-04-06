@@ -8,10 +8,10 @@ import { redirect } from 'next/navigation';
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get('email')?.toString();
   const password = formData.get('password')?.toString();
-  const isAdmin = formData.get('admin')?.toString();
+  const name = formData.get('fullname')?.toString();
+  const [firstname, lastname] = name?.split(' ') ?? [];
 
   const supabase = await createClient();
-  const adminSupabase = await createAdminClient();
 
   const origin = (await headers()).get('origin');
 
@@ -23,34 +23,30 @@ export const signUpAction = async (formData: FormData) => {
     );
   }
 
-  if (isAdmin) {
-    const { error } = await adminSupabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      app_metadata: {
-        role: 'admin'
-      }
-    });
-
-    if (error) {
-      console.error(error.message);
-      return encodedRedirect('error', '/sign-up', error.message);
-    }
-    
-    return encodedRedirect(
-      'success',
-      '/sign-up',
-      'Thanks for signing up! You are now an admin user.'
-    );
-  }
-  
-  const { error } = await supabase.auth.signUp({
+  const {
+    data: { user },
+    error
+  } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/callback`
+      emailRedirectTo: `${origin}/auth/callback`,
+      data: {
+        roles: ['trainee']
+      }
     }
+  });
+
+  console.log(user);
+
+  await supabase.from('profile').insert({
+    user_id: user!.id,
+    firstname,
+    lastname,
+    email,
+    batch_id: 1, // TODO: get batch id from the form
+    type: 'trainee',
+    contact: null // TODO: get contact from the form
   });
 
   if (error) {
@@ -59,10 +55,45 @@ export const signUpAction = async (formData: FormData) => {
   } else {
     return encodedRedirect(
       'success',
-      '/sign-up',
+      '/sign-in',
       'Thanks for signing up! Please check your email for a verification link.'
     );
   }
+};
+
+export const signUpAdminAction = async (formData: FormData) => {
+  const email = formData.get('email')?.toString();
+  const password = formData.get('password')?.toString();
+
+  const adminSupabase = await createAdminClient();
+
+  if (!email || !password) {
+    return encodedRedirect(
+      'error',
+      '/sign-up',
+      'Email and password are required'
+    );
+  }
+
+  const { error } = await adminSupabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    app_metadata: {
+      role: 'admin'
+    }
+  });
+
+  if (error) {
+    console.error(error.message);
+    return encodedRedirect('error', '/sign-up', error.message);
+  }
+
+  return encodedRedirect(
+    'success',
+    '/sign-up',
+    'Thanks for signing up! You are now an admin user.'
+  );
 };
 
 export const signInAction = async (formData: FormData) => {
@@ -79,7 +110,7 @@ export const signInAction = async (formData: FormData) => {
     return encodedRedirect('error', '/sign-in', error.message);
   }
 
-  return redirect('/leetcode/overview');
+  return redirect('/leetcode');
 };
 
 export const forgotPasswordAction = async (formData: FormData) => {
