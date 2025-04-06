@@ -1,6 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from './server';
 
 export const updateSession = async (request: NextRequest) => {
   // This `try/catch` block is only here for the interactive tutorial.
@@ -55,6 +54,10 @@ export const updateSession = async (request: NextRequest) => {
     }
 
     if (request.nextUrl.pathname.startsWith('/staff') && error) {
+      return NextResponse.redirect(new URL('/sign-in', request.url));
+    }
+
+    if (request.nextUrl.pathname.startsWith('/leetcode') && error) {
       return NextResponse.redirect(new URL('/sign-in', request.url));
     }
 

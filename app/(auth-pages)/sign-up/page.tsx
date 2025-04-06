@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -57,62 +58,79 @@ export default function MyForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-8 max-w-3xl mx-auto py-10"
+        className="flex flex-col min-w-64 max-w-64 mx-auto"
       >
-        <FormField
-          control={form.control}
-          name="fullname"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input placeholder="John Doe" type="text" {...field} />
-              </FormControl>
-              <FormDescription>This is your full name.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <h1 className="text-2xl font-medium">Sign Up</h1>
+        <p className="text-sm text text-foreground">
+          Already have an account?{' '}
+          <Link className="text-primary font-medium underline" href="/sign-in">
+            Sign in
+          </Link>
+        </p>
+        <div className="flex flex-col gap-2 [&>input]:mb-3 mt-8">
+          <FormField
+            control={form.control}
+            name="fullname"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="John Doe" type="text" {...field} />
+                </FormControl>
+                <FormDescription>This is your full name.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder="" type="email" {...field} />
-              </FormControl>
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="you@example.com"
+                    type="email"
+                    {...field}
+                  />
+                </FormControl>
 
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <PasswordInput {...field} />
-              </FormControl>
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <PasswordInput placeholder="Your password" {...field} />
+                </FormControl>
 
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? (
-            <>
-              <span className="mr-2">Signing up...</span>
-              <Loader2 className="h-4 w-4 animate-spin" />
-            </>
-          ) : (
-            'Submit'
-          )}
-        </Button>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button
+            type="submit"
+            disabled={form.formState.isSubmitting}
+            className="mt-4"
+          >
+            {form.formState.isSubmitting ? (
+              <>
+                <span className="mr-2">Signing up...</span>
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </>
+            ) : (
+              'Submit'
+            )}
+          </Button>
+        </div>
       </form>
     </Form>
   );

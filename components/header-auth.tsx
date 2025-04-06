@@ -34,7 +34,7 @@ export default async function AuthButton() {
             >
               <Link href="/sign-in">Sign in</Link>
             </Button>
-            {/* <Button
+            <Button
               asChild
               size="sm"
               variant={'default'}
@@ -42,7 +42,7 @@ export default async function AuthButton() {
               className="opacity-75 cursor-none pointer-events-none"
             >
               <Link href="/sign-up">Sign up</Link>
-            </Button> */}
+            </Button>
           </div>
         </div>
       </>
@@ -61,6 +61,9 @@ export default async function AuthButton() {
     <div className="flex gap-2">
       <Button asChild size="sm" variant={'outline'}>
         <Link href="/sign-in">Sign in</Link>
+      </Button>
+      <Button asChild size="sm" variant={'default'}>
+        <Link href="/sign-up">Sign up</Link>
       </Button>
     </div>
   );
