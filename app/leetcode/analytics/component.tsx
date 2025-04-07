@@ -31,7 +31,7 @@ const daysBetween = (date1: Date, date2: Date): number => {
 const LeetCodeAnalysis: React.FC<{ progress: LeetCodeProblem[] }> = ({
   progress
 }) => {
-  const [dateRange, setDateRange] = useState<number>(30); // Default to 30 days
+  const [dateRange, setDateRange] = useState<number>(7); // Default to 7 days
   const [solvedByDifficulty, setSolvedByDifficulty] = useState<any[]>([]);
   const [solvedByTopic, setSolvedByTopic] = useState<any[]>([]);
   const [submissionsByDate, setSubmissionsByDate] = useState<any[]>([]);
@@ -196,57 +196,57 @@ const LeetCodeAnalysis: React.FC<{ progress: LeetCodeProblem[] }> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white p-6 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">
-            Problems Solved by Difficulty
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={solvedByDifficulty}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="count" fill="#8884d8" name="Problems Solved" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+      <div className="bg-white p-6 rounded shadow">
+        <h2 className="text-xl font-semibold mb-4 text-slate-900">
+          Problems Solved by Difficulty
+        </h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={solvedByDifficulty}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip labelClassName="text-slate-800" />
+            <Legend />
+            <Bar dataKey="count" fill="#8884d8" name="Problems Solved" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
 
-        <div className="bg-white p-6 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">
-            Problems Solved Over Time
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={submissionsByDate}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="count"
-                stroke="#8884d8"
-                name="Problems Solved"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+      <div className="bg-white p-6 rounded shadow">
+        <h2 className="text-xl font-semibold mb-4 text-slate-900">
+          Problems Solved Over Time
+        </h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={submissionsByDate}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip labelClassName="text-slate-800" />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="count"
+              stroke="#8884d8"
+              name="Problems Solved"
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
 
       <div className="bg-white p-6 rounded shadow mb-8">
-        <h2 className="text-xl font-semibold mb-4">Top Topics</h2>
+        <h2 className="text-xl font-semibold mb-4 text-slate-900">
+          Top Topics
+        </h2>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart
             data={solvedByTopic}
             layout="vertical"
-            margin={{ top: 5, right: 30, left: 150, bottom: 5 }}
+            margin={{ top: 5, right: 30, left: 50, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis type="number" />
             <YAxis dataKey="name" type="category" />
-            <Tooltip />
+            <Tooltip labelClassName="text-slate-800" />
             <Legend />
             <Bar dataKey="count" fill="#82ca9d" name="Problems Solved" />
           </BarChart>

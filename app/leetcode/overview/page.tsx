@@ -13,6 +13,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 export default function LeetcodeOverview() {
   const [leetcodeSessions, setLeetcodeSessions] = useState<any>(null);
@@ -50,15 +51,17 @@ export default function LeetcodeOverview() {
               </TableHeader>
               <TableBody>
                 {leetcodeSessions?.map((session: any) => (
-                  <TableRow
-                    key={session.id}
-                    onClick={() => {
-                      router.push(`/leetcode/analytics?id=${session.id}`);
-                    }}
-                  >
-                    <TableCell>{session.name}</TableCell>
+                  <TableRow key={session.id}>
+                    <TableCell>
+                      <Link
+                        href={`/leetcode/analytics?id=${session.id}`}
+                        className="text-blue-500 hover:underline"
+                      >
+                        {session.name}
+                      </Link>
+                    </TableCell>
                     <TableCell>{session.leetcode_id}</TableCell>
-                    <TableCell className="max-w-xs truncate">
+                    <TableCell className="max-w-xs truncate font-mono">
                       {session.sessionStr}
                     </TableCell>
                     <TableCell>

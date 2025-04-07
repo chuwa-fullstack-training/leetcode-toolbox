@@ -145,3 +145,25 @@ query userProgressQuestionList($filters: UserProgressQuestionListInput) {
 
   return response.data;
 }
+
+export async function getLeetcodeProgress(id: string) {
+  try {
+    const supabase = await createClient();
+    const { data: user } = await supabase
+      .from('leetcode')
+      .select('name,sessionStr')
+      .eq('id', id)
+      .single();
+    const { data: result } = await userProgressQuestionList(
+      { skip: 0, limit: 50 },
+      user?.sessionStr
+    );
+    return {
+      name: user?.name,
+      questions: result.userProgressQuestionList.questions,
+      totalNum: result.userProgressQuestionList.totalNum
+    };
+  } catch (error) {
+    throw new Error('Error fetching LeetCode progress');
+  }
+}
