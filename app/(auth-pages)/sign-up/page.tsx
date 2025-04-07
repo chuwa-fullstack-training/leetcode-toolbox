@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
+import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -111,8 +112,14 @@ export default function MyForm() {
                 <FormControl>
                   <PasswordInput placeholder="Your password" {...field} />
                 </FormControl>
-
-                <FormMessage />
+                <FormDescription
+                  className={cn(
+                    form.formState.errors.password && 'text-destructive'
+                  )}
+                >
+                  Password must contain at least 8 characters, one uppercase
+                  letter, one lowercase letter, and one number.
+                </FormDescription>
               </FormItem>
             )}
           />
