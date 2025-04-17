@@ -1,6 +1,6 @@
-'use client';
-import { signUpAction } from '@/app/actions';
-import { Button } from '@/components/ui/button';
+"use client";
+import { signUpAction } from "@/app/actions";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -8,51 +8,142 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { PasswordInput } from '@/components/ui/password-input';
-import { cn } from '@/lib/utils';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertCircle, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 const formSchema = z.object({
-  fullname: z.string().regex(/^[a-zA-Z]+\s[a-zA-Z]+$/, 'Invalid name'),
-  email: z.string().email('Invalid email'),
+  fullname: z.string().regex(/^[a-zA-Z]+\s[a-zA-Z]+$/, "Invalid name"),
+  email: z.string().email("Invalid email"),
   password: z
     .string()
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/, 'Invalid password')
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/,
+      "Invalid password"
+    ),
 });
 
-export default function MyForm() {
+export default function SignUpForm() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const token = searchParams.get("token");
+  const [tokenError, setTokenError] = useState<string | null>(null);
+  const [isValidating, setIsValidating] = useState(true);
+  const [tokenEmail, setTokenEmail] = useState<string | null>(null);
+
+  // Validate token on page load
+  useEffect(() => {
+    async function validateToken() {
+      if (!token) {
+        setTokenError(
+          "No invitation token provided. Sign-up is by invitation only."
+        );
+        setIsValidating(false);
+        return;
+      }
+
+      try {
+        // Call a verification endpoint to check token and get email
+        const res = await fetch(`/api/verify-token?token=${token}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          setTokenError(data.error || "Invalid or expired invitation token.");
+          setIsValidating(false);
+          return;
+        }
+
+        // Token is valid, pre-fill email
+        setTokenEmail(data.email);
+        setIsValidating(false);
+      } catch (error) {
+        console.error("Token validation error:", error);
+        setTokenError(
+          "Could not verify invitation token. Please try again later."
+        );
+        setIsValidating(false);
+      }
+    }
+
+    validateToken();
+  }, [token]);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullname: '',
-      email: '',
-      password: ''
-    }
+      fullname: "",
+      email: tokenEmail || "",
+      password: "",
+    },
   });
+
+  // Update email field when tokenEmail changes
+  useEffect(() => {
+    if (tokenEmail) {
+      form.setValue("email", tokenEmail);
+    }
+  }, [tokenEmail, form]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
+      if (!token) {
+        setTokenError(
+          "No invitation token provided. Sign-up is by invitation only."
+        );
+        return;
+      }
+
       const formData = new FormData();
-      formData.append('fullname', values.fullname);
-      formData.append('email', values.email);
-      formData.append('password', values.password);
+      formData.append("fullname", values.fullname);
+      formData.append("email", values.email);
+      formData.append("password", values.password);
+      formData.append("token", token);
       await signUpAction(formData);
-      // toast(
-      //   <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-      //     <code className="text-white">{JSON.stringify(values, null, 2)}</code>
-      //   </pre>
-      // );
     } catch (error) {
-      console.error('Form submission error', error);
-      // toast.error('Failed to submit the form. Please try again.');
+      console.error("Form submission error", error);
     }
+  }
+
+  // If validating or no token, show appropriate message
+  if (isValidating) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p>Verifying invitation...</p>
+      </div>
+    );
+  }
+
+  if (tokenError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] max-w-md mx-auto">
+        <div className="flex flex-col items-center p-6 border border-red-200 rounded-lg bg-red-50 text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+          <h2 className="text-lg font-semibold mb-2">Access Denied</h2>
+          <p className="text-sm text-gray-700 mb-4">{tokenError}</p>
+          <p className="text-sm text-gray-600">
+            Please contact your HR department to receive a valid invitation
+            link.
+          </p>
+          <Button
+            variant="outline"
+            className="mt-6"
+            onClick={() => router.push("/sign-in")}
+          >
+            Go to Sign In
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -63,7 +154,7 @@ export default function MyForm() {
       >
         <h1 className="text-2xl font-medium">Sign Up</h1>
         <p className="text-sm text text-foreground">
-          Already have an account?{' '}
+          Already have an account?{" "}
           <Link className="text-primary font-medium underline" href="/sign-in">
             Sign in
           </Link>
@@ -95,9 +186,16 @@ export default function MyForm() {
                     placeholder="you@example.com"
                     type="email"
                     {...field}
+                    readOnly={!!tokenEmail}
+                    className={tokenEmail ? "bg-muted cursor-not-allowed" : ""}
                   />
                 </FormControl>
-
+                {tokenEmail && (
+                  <FormDescription>
+                    Email is pre-filled from your invitation and cannot be
+                    changed.
+                  </FormDescription>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -114,7 +212,7 @@ export default function MyForm() {
                 </FormControl>
                 <FormDescription
                   className={cn(
-                    form.formState.errors.password && 'text-destructive'
+                    form.formState.errors.password && "text-destructive"
                   )}
                 >
                   Password must contain at least 8 characters, one uppercase
@@ -134,7 +232,7 @@ export default function MyForm() {
                 <Loader2 className="h-4 w-4 animate-spin" />
               </>
             ) : (
-              'Submit'
+              "Submit"
             )}
           </Button>
         </div>

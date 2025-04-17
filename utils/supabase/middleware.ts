@@ -1,5 +1,5 @@
-import { createServerClient } from '@supabase/ssr';
-import { type NextRequest, NextResponse } from 'next/server';
+import { createServerClient } from "@supabase/ssr";
+import { type NextRequest, NextResponse } from "next/server";
 
 export const updateSession = async (request: NextRequest) => {
   // This `try/catch` block is only here for the interactive tutorial.
@@ -8,8 +8,8 @@ export const updateSession = async (request: NextRequest) => {
     // Create an unmodified response
     let response = NextResponse.next({
       request: {
-        headers: request.headers
-      }
+        headers: request.headers,
+      },
     });
 
     const supabase = createServerClient(
@@ -25,13 +25,13 @@ export const updateSession = async (request: NextRequest) => {
               request.cookies.set(name, value)
             );
             response = NextResponse.next({
-              request
+              request,
             });
             cookiesToSet.forEach(({ name, value, options }) =>
               response.cookies.set(name, value, options)
             );
-          }
-        }
+          },
+        },
       }
     );
 
@@ -39,38 +39,54 @@ export const updateSession = async (request: NextRequest) => {
     // https://supabase.com/docs/guides/auth/server-side/nextjs
     const {
       data: { user },
-      error
+      error,
     } = await supabase.auth.getUser();
 
     const isAdmin =
-      user?.app_metadata?.role === 'admin' ||
-      user?.user_metadata?.role === 'admin' ||
+      user?.app_metadata?.role === "admin" ||
+      user?.user_metadata?.role === "admin" ||
       user?.app_metadata?.is_admin === true ||
       user?.user_metadata?.is_admin === true;
 
-    // protected routes
-    if (request.nextUrl.pathname.startsWith('/protected') && error) {
-      return NextResponse.redirect(new URL('/sign-in', request.url));
+    // protected routes - add redirectTo parameter
+    if (request.nextUrl.pathname.startsWith("/protected") && error) {
+      const redirectUrl = new URL("/sign-in", request.url);
+      redirectUrl.searchParams.set("redirectTo", request.nextUrl.pathname);
+      return NextResponse.redirect(redirectUrl);
     }
 
-    if (request.nextUrl.pathname.startsWith('/staff') && error) {
-      return NextResponse.redirect(new URL('/sign-in', request.url));
+    if (request.nextUrl.pathname.startsWith("/staff") && error) {
+      const redirectUrl = new URL("/sign-in", request.url);
+      redirectUrl.searchParams.set("redirectTo", request.nextUrl.pathname);
+      return NextResponse.redirect(redirectUrl);
     }
 
-    if (request.nextUrl.pathname.startsWith('/leetcode') && error) {
-      return NextResponse.redirect(new URL('/sign-in', request.url));
+    if (request.nextUrl.pathname.startsWith("/leetcode") && error) {
+      const redirectUrl = new URL("/sign-in", request.url);
+      redirectUrl.searchParams.set("redirectTo", request.nextUrl.pathname);
+      return NextResponse.redirect(redirectUrl);
     }
 
     // if (request.nextUrl.pathname.startsWith('/sign-up')) {
     //   return NextResponse.redirect(new URL('/leetcode', request.url));
     // }
 
-    if (request.nextUrl.pathname === '/' && !error) {
-      return NextResponse.redirect(new URL('/protected', request.url));
+    // Redirect authenticated users away from sign-in page
+    if (request.nextUrl.pathname === "/sign-in" && !error) {
+      // Check if there's a redirectTo parameter
+      const redirectTo = request.nextUrl.searchParams.get("redirectTo");
+      if (redirectTo) {
+        return NextResponse.redirect(new URL(redirectTo, request.url));
+      }
+      return NextResponse.redirect(new URL("/protected", request.url));
+    }
+
+    if (request.nextUrl.pathname === "/" && !error) {
+      return NextResponse.redirect(new URL("/protected", request.url));
     }
 
     if (/\/leetcode\/+/.test(request.nextUrl.pathname) && !isAdmin) {
-      return NextResponse.redirect(new URL('/leetcode', request.url));
+      return NextResponse.redirect(new URL("/leetcode", request.url));
     }
 
     return response;
@@ -80,8 +96,8 @@ export const updateSession = async (request: NextRequest) => {
     // Check out http://localhost:3000 for Next Steps.
     return NextResponse.next({
       request: {
-        headers: request.headers
-      }
+        headers: request.headers,
+      },
     });
   }
 };
