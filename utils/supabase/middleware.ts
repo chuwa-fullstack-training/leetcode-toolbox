@@ -55,10 +55,15 @@ export const updateSession = async (request: NextRequest) => {
       return NextResponse.redirect(redirectUrl);
     }
 
-    if (request.nextUrl.pathname.startsWith("/staff") && error) {
-      const redirectUrl = new URL("/sign-in", request.url);
-      redirectUrl.searchParams.set("redirectTo", request.nextUrl.pathname);
-      return NextResponse.redirect(redirectUrl);
+    if (request.nextUrl.pathname.startsWith("/staff")) {
+      if (error) {
+        const redirectUrl = new URL("/sign-in", request.url);
+        redirectUrl.searchParams.set("redirectTo", request.nextUrl.pathname);
+        return NextResponse.redirect(redirectUrl);
+      }
+      if (!isAdmin) {
+        return NextResponse.redirect(new URL("/protected", request.url));
+      }
     }
 
     if (request.nextUrl.pathname.startsWith("/leetcode") && error) {
