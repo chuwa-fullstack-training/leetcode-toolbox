@@ -49,7 +49,7 @@ export default function LeetcodeLayout({
   return (
     <QueryClientProvider client={queryClient}>
       {!isLoading && isAdmin ? (
-        <div className="flex h-screen">
+        <div className="flex min-h-screen">
           <Sidebar />
           <div className="flex-1 overflow-auto">{children}</div>
         </div>

@@ -1,17 +1,25 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, Send, CheckCircle, XCircle, Copy } from "lucide-react";
-import { createToken, getTokens } from "@/app/staff/tokens/actions";
-import { SignupToken } from "@/types/auth";
-import { formatDistance } from "date-fns";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import { Loader2, Send, CheckCircle, XCircle, Copy } from 'lucide-react';
+import { createToken, getTokens } from '@/app/staff/tokens/actions';
+import { SignupToken } from '@/types/auth';
+import { formatDistance } from 'date-fns';
 
 export default function TokenManagement() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tokens, setTokens] = useState<SignupToken[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +34,7 @@ export default function TokenManagement() {
         const fetchedTokens = await getTokens();
         setTokens(fetchedTokens);
       } catch (error) {
-        console.error("Failed to load tokens:", error);
+        console.error('Failed to load tokens:', error);
       } finally {
         setIsLoading(false);
       }
@@ -46,10 +54,10 @@ export default function TokenManagement() {
         // Refresh tokens list
         const updatedTokens = await getTokens();
         setTokens(updatedTokens);
-        setEmail("");
+        setEmail('');
       }
     } catch (error) {
-      console.error("Failed to create token:", error);
+      console.error('Failed to create token:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -68,7 +76,7 @@ export default function TokenManagement() {
         setCopied(true);
         setTimeout(() => setCopied(false), 3000);
       })
-      .catch((err) => console.error("Failed to copy link:", err));
+      .catch(err => console.error('Failed to copy link:', err));
   };
 
   // Format expiration date relative to now
@@ -76,7 +84,7 @@ export default function TokenManagement() {
     try {
       return formatDistance(date, new Date(), { addSuffix: true });
     } catch (error) {
-      return "Invalid date";
+      return 'Invalid date';
     }
   };
 
@@ -84,7 +92,7 @@ export default function TokenManagement() {
     <div className="container max-w-5xl py-8">
       <h1 className="text-3xl font-bold mb-8">HR Token Management</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-8">
         {/* Create Token Form */}
         <Card>
           <CardHeader>
@@ -99,7 +107,7 @@ export default function TokenManagement() {
                   type="email"
                   placeholder="trainee@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={e => setEmail(e.target.value)}
                   required
                 />
               </div>
@@ -162,34 +170,47 @@ export default function TokenManagement() {
                 No tokens found
               </p>
             ) : (
-              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                {tokens.map((token) => (
-                  <div key={token.id} className="p-4 border rounded-md text-sm">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="font-medium">{token.email}</span>
-                      {token.isUsed ? (
-                        <span className="text-xs px-2 py-1 bg-gray-100 text-gray-500 rounded-full flex items-center">
-                          <CheckCircle className="h-3 w-3 mr-1" /> Used
-                        </span>
-                      ) : new Date(token.expiresAt) < new Date() ? (
-                        <span className="text-xs px-2 py-1 bg-red-100 text-red-500 rounded-full flex items-center">
-                          <XCircle className="h-3 w-3 mr-1" /> Expired
-                        </span>
-                      ) : (
-                        <span className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full flex items-center">
-                          Active
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>
-                        Created:{" "}
-                        {new Date(token.createdAt).toLocaleDateString()}
-                      </span>
-                      <span>Expires: {formatExpiration(token.expiresAt)}</span>
-                    </div>
-                  </div>
-                ))}
+              <div className="max-h-[500px] overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Expires</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tokens.map(token => (
+                      <TableRow key={token.id}>
+                        <TableCell className="font-medium">
+                          {token.email}
+                        </TableCell>
+                        <TableCell>
+                          {token.isUsed ? (
+                            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-500 rounded-full flex items-center w-fit">
+                              <CheckCircle className="h-3 w-3 mr-1" /> Used
+                            </span>
+                          ) : new Date(token.expiresAt) < new Date() ? (
+                            <span className="text-xs px-2 py-1 bg-red-100 text-red-500 rounded-full flex items-center w-fit">
+                              <XCircle className="h-3 w-3 mr-1" /> Expired
+                            </span>
+                          ) : (
+                            <span className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full flex items-center w-fit">
+                              Active
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {new Date(token.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {formatExpiration(token.expiresAt)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>

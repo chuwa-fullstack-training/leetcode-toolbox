@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -9,17 +10,35 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { createClient } from '@/utils/supabase/client';
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
-  DialogTrigger
+  DialogTitle
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  getSortedRowModel,
+  SortingState,
+  getFilteredRowModel,
+  ColumnFiltersState
+} from '@tanstack/react-table';
 import { PerformanceEditForm } from './components/performance-edit-form';
+import { Pencil } from 'lucide-react';
 
 // Type definitions for performance data
 type Assignment = {
@@ -47,32 +66,156 @@ type Trainee = {
   email: string;
   firstname: string;
   lastname: string;
+  batchId?: string;
   performance?: Performance;
+  // Computed properties for the table
+  fullName?: string;
+  assignmentAvg?: number;
+  quizAvg?: number;
+  leetcodeAvg?: number;
+  overallScore?: number;
+};
+
+type BatchType = 'js-fullstack' | 'java-backend' | 'ai-ml';
+
+type Batch = {
+  id: string;
+  name: string;
+  type: BatchType;
+  trainer: string;
+  startDate: string;
 };
 
 export default function PerformancePage() {
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [trainees, setTrainees] = useState<Trainee[]>([]);
+  const [filteredTrainees, setFilteredTrainees] = useState<Trainee[]>([]);
+  const [selectedBatchId, setSelectedBatchId] = useState<string>('');
   const [selectedTrainee, setSelectedTrainee] = useState<Trainee | null>(null);
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [nameFilter, setNameFilter] = useState<string>('');
 
+  // Calculate trainee average performance
+  function calculateTraineePerformance(trainee: Trainee): number {
+    if (!trainee.performance) return 0;
+
+    const assignments = trainee.performance.assignments || {
+      check1: 0,
+      check2: 0,
+      check3: 0
+    };
+    const avgAssignment =
+      (assignments.check1 + assignments.check2 + assignments.check3) / 3;
+
+    const quizzes = trainee.performance.quizzes || {};
+    const quizScores = Object.values(quizzes) as number[];
+    const avgQuiz = quizScores.length
+      ? quizScores.reduce((sum, score) => sum + score, 0) / quizScores.length
+      : 0;
+
+    const leetcode = trainee.performance.leetcode || {};
+    const leetcodeCompletions = Object.values(leetcode) as number[];
+    const avgLeetcode = leetcodeCompletions.length
+      ? (leetcodeCompletions.reduce((sum, count) => sum + count, 0) /
+          leetcodeCompletions.length) *
+        5 // Scale to 100
+      : 0;
+
+    // Weighted average: 40% assignments, 30% quizzes, 30% leetcode
+    return avgAssignment * 0.4 + avgQuiz * 0.3 + avgLeetcode * 0.3;
+  }
+
+  // Fetch batches and trainees
   useEffect(() => {
     const supabase = createClient();
 
-    async function getTrainees() {
-      const { data, error } = await supabase
-        .from('profile')
-        .select('id, email, firstname, lastname, performance');
+    async function fetchData() {
+      setLoading(true);
 
-      if (error) {
-        console.error('Error fetching trainees:', error);
-        return;
+      // Fetch batches
+      const { data: batchData, error: batchError } = await supabase
+        .from('batch')
+        .select('*');
+
+      if (batchError) {
+        console.error('Error fetching batches:', batchError);
+      } else {
+        setBatches(batchData || []);
+        // Set the first batch as selected by default if available
+        if (batchData && batchData.length > 0) {
+          setSelectedBatchId(batchData[0].id);
+        }
       }
 
-      setTrainees(data || []);
+      // Fetch trainees with their profile and performance data
+      const { data: traineeData, error: traineeError } = await supabase
+        .from('profile')
+        .select(
+          'id, email, firstname, lastname, batchId:batch_id, performance'
+        );
+
+      if (traineeError) {
+        console.error('Error fetching trainees:', traineeError);
+      } else {
+        // Process trainee data to add computed properties
+        const processedTrainees = (traineeData || []).map(trainee => {
+          // Calculate performance metrics
+          const assignments = trainee.performance?.assignments || {
+            check1: 0,
+            check2: 0,
+            check3: 0
+          };
+          const avgAssignment =
+            (assignments.check1 + assignments.check2 + assignments.check3) / 3;
+
+          const quizzes = trainee.performance?.quizzes || {};
+          const quizScores = Object.values(quizzes) as number[];
+          const avgQuiz = quizScores.length
+            ? quizScores.reduce((sum, score) => sum + score, 0) /
+              quizScores.length
+            : 0;
+
+          const leetcode = trainee.performance?.leetcode || {};
+          const leetcodeCompletions = Object.values(leetcode) as number[];
+          const avgLeetcode = leetcodeCompletions.length
+            ? leetcodeCompletions.reduce((sum, count) => sum + count, 0) /
+              leetcodeCompletions.length
+            : 0;
+
+          const overallScore = calculateTraineePerformance(trainee);
+
+          return {
+            ...trainee,
+            fullName: `${trainee.firstname} ${trainee.lastname}`,
+            assignmentAvg: avgAssignment,
+            quizAvg: avgQuiz,
+            leetcodeAvg: avgLeetcode,
+            overallScore
+          };
+        });
+
+        setTrainees(processedTrainees);
+      }
+
+      setLoading(false);
     }
 
-    getTrainees();
+    fetchData();
   }, []);
+
+  // Filter trainees when batch selection changes
+  useEffect(() => {
+    if (selectedBatchId) {
+      setFilteredTrainees(
+        trainees.filter(trainee => trainee.batchId === selectedBatchId)
+      );
+    } else {
+      setFilteredTrainees(trainees);
+    }
+  }, [selectedBatchId, trainees]);
 
   const handleEditPerformance = (trainee: Trainee) => {
     setSelectedTrainee(trainee);
@@ -96,16 +239,129 @@ export default function PerformancePage() {
         return;
       }
 
-      // Update local state
-      setTrainees(
-        trainees.map(t => (t.id === traineeId ? { ...t, performance } : t))
-      );
+      // Update local state by re-fetching all data
+      const { data } = await supabase
+        .from('profile')
+        .select(
+          'id, email, firstname, lastname, batchId:batch_id, performance'
+        );
+
+      if (data) {
+        // Process trainee data as before
+        const processedTrainees = data.map(trainee => {
+          const overallScore = calculateTraineePerformance(trainee);
+          return {
+            ...trainee,
+            fullName: `${trainee.firstname} ${trainee.lastname}`,
+            overallScore
+          };
+        });
+
+        setTrainees(processedTrainees);
+      }
 
       setOpen(false);
     } catch (error) {
       console.error('Failed to update performance', error);
     }
   };
+
+  // Define table columns
+  const columns = useMemo<ColumnDef<Trainee>[]>(
+    () => [
+      {
+        accessorKey: 'fullName',
+        header: 'Name',
+        cell: ({ row }) => <div>{row.original.fullName}</div>,
+        filterFn: 'includesString',
+        enableSorting: true
+      },
+      {
+        accessorKey: 'email',
+        header: 'Email',
+        cell: ({ row }) => <div>{row.original.email}</div>,
+        enableSorting: true
+      },
+      {
+        accessorKey: 'assignmentAvg',
+        header: 'Assignment Completion',
+        cell: ({ row }) => <div>{row.original.assignmentAvg?.toFixed(1)}%</div>,
+        enableSorting: true
+      },
+      {
+        accessorKey: 'quizAvg',
+        header: 'Quiz Average',
+        cell: ({ row }) => <div>{row.original.quizAvg?.toFixed(1)}</div>,
+        enableSorting: true
+      },
+      {
+        accessorKey: 'leetcodeAvg',
+        header: 'Leetcode Weekly Avg',
+        cell: ({ row }) => <div>{row.original.leetcodeAvg?.toFixed(1)}/20</div>,
+        enableSorting: true
+      },
+      {
+        accessorKey: 'overallScore',
+        header: 'Overall Score',
+        cell: ({ row }) => (
+          <Badge
+            variant={
+              row.original.overallScore! > 75
+                ? 'default'
+                : row.original.overallScore! > 50
+                  ? 'secondary'
+                  : 'outline'
+            }
+          >
+            {row.original.overallScore?.toFixed(1)}%
+          </Badge>
+        ),
+        enableSorting: true,
+        filterFn: (row, id, value) => {
+          const score = row.original.overallScore || 0;
+          const [min, max] = value;
+          return score >= min && score <= max;
+        }
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        enableSorting: false,
+        cell: ({ row }) => (
+          <Button
+            variant="outline"
+            onClick={() => handleEditPerformance(row.original)}
+          >
+            <Pencil />
+          </Button>
+        )
+      }
+    ],
+    []
+  );
+
+  const table = useReactTable({
+    data: filteredTrainees,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      sorting,
+      columnFilters
+    },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters
+  });
+
+  // Debounce effect for name filtering
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      table.getColumn('fullName')?.setFilterValue(nameFilter);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [nameFilter, table]);
 
   return (
     <div className="container mx-auto py-10">
@@ -119,72 +375,99 @@ export default function PerformancePage() {
             challenges.
           </p>
 
-          {trainees.length === 0 ? (
-            <p>No trainees found.</p>
+          {/* Batch selection dropdown */}
+          <div className="mb-6">
+            <label className="text-sm font-medium mb-2 block">
+              Select Batch
+            </label>
+            <Select
+              value={selectedBatchId}
+              onValueChange={setSelectedBatchId}
+              disabled={loading}
+            >
+              <SelectTrigger className="w-[300px]">
+                <SelectValue placeholder="Select a batch" />
+              </SelectTrigger>
+              <SelectContent>
+                {batches.map(batch => (
+                  <SelectItem key={batch.id} value={batch.id}>
+                    {batch.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Filtering controls */}
+          <div className="flex items-center py-4 gap-4">
+            <Input
+              placeholder="Filter by name..."
+              value={nameFilter}
+              onChange={event => setNameFilter(event.target.value)}
+              className="max-w-sm"
+            />
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center p-12">
+              <div className="flex flex-col items-center gap-4">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                <p className="text-muted-foreground">
+                  Loading performance data...
+                </p>
+              </div>
+            </div>
+          ) : filteredTrainees.length === 0 ? (
+            <p>No trainees found for the selected batch.</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Assignment Completion</TableHead>
-                  <TableHead>Quiz Average</TableHead>
-                  <TableHead>Leetcode Weekly Avg</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {trainees.map(trainee => {
-                  // Calculate performance metrics
-                  const assignments = trainee.performance?.assignments || {
-                    check1: 0,
-                    check2: 0,
-                    check3: 0
-                  };
-                  const avgAssignment =
-                    (assignments.check1 +
-                      assignments.check2 +
-                      assignments.check3) /
-                    3;
-
-                  const quizzes = trainee.performance?.quizzes || {};
-                  const quizScores = Object.values(quizzes);
-                  const avgQuiz = quizScores.length
-                    ? quizScores.reduce((sum, score) => sum + score, 0) /
-                      quizScores.length
-                    : 0;
-
-                  const leetcode = trainee.performance?.leetcode || {};
-                  const leetcodeCompletions = Object.values(leetcode);
-                  const avgLeetcode = leetcodeCompletions.length
-                    ? leetcodeCompletions.reduce(
-                        (sum, count) => sum + count,
-                        0
-                      ) / leetcodeCompletions.length
-                    : 0;
-
-                  return (
-                    <TableRow key={trainee.id}>
-                      <TableCell>
-                        {trainee.firstname} {trainee.lastname}
-                      </TableCell>
-                      <TableCell>{trainee.email}</TableCell>
-                      <TableCell>{avgAssignment.toFixed(1)}%</TableCell>
-                      <TableCell>{avgQuiz.toFixed(1)}</TableCell>
-                      <TableCell>{avgLeetcode.toFixed(1)}/20</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          onClick={() => handleEditPerformance(trainee)}
-                        >
-                          Edit Performance
-                        </Button>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  {table.getHeaderGroups().map(headerGroup => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map(header => (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows?.length ? (
+                    table.getRowModel().rows.map(row => (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && 'selected'}
+                      >
+                        {row.getVisibleCells().map(cell => (
+                          <TableCell key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-24 text-center"
+                      >
+                        No results.
                       </TableCell>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
