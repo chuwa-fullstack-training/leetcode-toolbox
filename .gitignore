@@ -23,6 +23,9 @@
 # misc
 .DS_Store
 *.pem
+.vscode
+.claude
+CLAUDE.md
 
 # debug
 npm-debug.log*

@@ -10,6 +10,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@calcom/embed-react": "^1.5.3",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-checkbox": "^1.2.3",
     "@radix-ui/react-dialog": "^1.1.11",
@@ -42,6 +43,7 @@
     "react-hook-form": "^7.56.2",
     "react-phone-number-input": "^3.4.12",
     "recharts": "^2.15.3",
+    "resend": "^4.5.1",
     "sonner": "^2.0.3",
     "uuid": "^11.1.0",
     "zod": "^3.24.3"

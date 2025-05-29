@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Users, Layers, BarChartBig, MailIcon } from 'lucide-react';
+import { Users, Layers, BarChartBig, MailIcon, Bell } from 'lucide-react';
 
 interface StaffLayoutProps {
   children: React.ReactNode;
@@ -9,10 +9,10 @@ interface StaffLayoutProps {
 
 export default function StaffLayout({ children }: StaffLayoutProps) {
   return (
-    <div className="flex h-full">
-      {/* Sidebar */}
-      <div className="w-64 border-r bg-sidebar text-sidebar-foreground min-h-screen">
-        <div className="p-4">
+    <div className="flex h-screen">
+      {/* Fixed Sidebar */}
+      <div className="fixed left-0 top-0 w-64 h-full border-r bg-sidebar text-sidebar-foreground z-10">
+        <div className="p-4 h-full overflow-y-auto">
           <h2 className="text-xl font-bold mb-6">Staff Portal</h2>
           <nav className="space-y-2">
             <div className="mb-6">
@@ -54,13 +54,23 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
                 <span>Invitation</span>
               </Link>
             </div>
+
+            <div className="mb-6">
+              <Link
+                href="/staff/notifications"
+                className="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <Bell size={18} />
+                <span>Notifications</span>
+              </Link>
+            </div>
           </nav>
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1">
-        <main className="p-6">{children}</main>
+      {/* Main content with left margin to account for fixed sidebar */}
+      <div className="flex-1 ml-64">
+        <main className="p-6 h-full overflow-y-auto">{children}</main>
       </div>
     </div>
   );
