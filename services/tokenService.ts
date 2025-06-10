@@ -32,6 +32,7 @@ export const tokenService = {
       id: data.id,
       token: data.token,
       email: data.email,
+      batchId: data.batch_id,
       isUsed: data.is_used,
       expiresAt: new Date(data.expires_at),
       createdAt: new Date(data.created_at),
@@ -49,6 +50,7 @@ export const tokenService = {
 
   async createSignupToken(
     email: string,
+    batchId: string,
     expiresInDays = 7
   ): Promise<SignupToken | null> {
     const supabase = await createClient();
@@ -61,6 +63,7 @@ export const tokenService = {
       .insert({
         token,
         email,
+        batch_id: batchId,
         is_used: false,
         expires_at: expiresAt.toISOString(),
       })
@@ -76,6 +79,7 @@ export const tokenService = {
       id: data.id,
       token: data.token,
       email: data.email,
+      batchId: data.batch_id,
       isUsed: data.is_used,
       expiresAt: new Date(data.expires_at),
       createdAt: new Date(data.created_at),
@@ -98,6 +102,7 @@ export const tokenService = {
       id: token.id,
       token: token.token,
       email: token.email,
+      batchId: token.batch_id,
       isUsed: token.is_used,
       expiresAt: new Date(token.expires_at),
       createdAt: new Date(token.created_at),

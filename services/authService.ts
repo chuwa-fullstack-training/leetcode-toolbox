@@ -16,7 +16,7 @@ export const authService = {
       throw new Error('Invalid or expired token');
     }
 
-    // Get token data to ensure email matches
+    // Get token data to ensure email matches and get batch_id
     const tokenData = await tokenService.getTokenData(token);
     if (!tokenData || tokenData.email !== email) {
       throw new Error('Email does not match invitation');
@@ -32,7 +32,7 @@ export const authService = {
       throw new Error(authError?.message || 'Failed to create user');
     }
 
-    // Create user profile in our users table
+    // Create user profile in our users table with batch_id
     const { data: userData, error: userError } = await supabase
       .from('users')
       .insert([
@@ -40,6 +40,7 @@ export const authService = {
           id: authData.user.id,
           email,
           name,
+          batch_id: tokenData.batchId,
           onboarding_completed: false
         }
       ])
@@ -57,6 +58,7 @@ export const authService = {
       id: userData.id,
       email: userData.email,
       name: userData.name,
+      batchId: userData.batch_id,
       createdAt: new Date(userData.created_at),
       onboardingCompleted: userData.onboarding_completed
     };

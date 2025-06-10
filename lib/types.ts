@@ -43,6 +43,19 @@ export interface Notification {
 }
 
 /**
+ * Represents batch information/messages for a specific batch
+ */
+export interface BatchInfo {
+  id: string;
+  batchId: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: string; // User ID of the creator
+}
+
+/**
  * Enum for difficulty levels of LeetCode problems
  */
 enum Difficulty {

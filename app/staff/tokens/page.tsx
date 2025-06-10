@@ -6,6 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -14,47 +21,65 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Loader2, Send, CheckCircle, XCircle, Copy } from 'lucide-react';
-import { createToken, getTokens } from '@/app/staff/tokens/actions';
+import { createToken, getTokens, getBatches } from '@/app/staff/tokens/actions';
 import { SignupToken } from '@/types/auth';
 import { formatDistance } from 'date-fns';
 
+// Type for batches
+type Batch = {
+  id: string;
+  name: string;
+  type: string;
+};
+
 export default function TokenManagement() {
   const [email, setEmail] = useState('');
+  const [batchId, setBatchId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tokens, setTokens] = useState<SignupToken[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newToken, setNewToken] = useState<SignupToken | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Load tokens on page load
+  // Load tokens and batches on page load
   useEffect(() => {
-    const loadTokens = async () => {
+    const loadData = async () => {
       setIsLoading(true);
       try {
-        const fetchedTokens = await getTokens();
+        const [fetchedTokens, fetchedBatches] = await Promise.all([
+          getTokens(),
+          getBatches()
+        ]);
         setTokens(fetchedTokens);
+        setBatches(fetchedBatches);
       } catch (error) {
-        console.error('Failed to load tokens:', error);
+        console.error('Failed to load data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadTokens();
+    loadData();
   }, []);
 
   // Handle token creation
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!batchId) {
+      alert('Please select a batch');
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const token = await createToken(email);
+      const token = await createToken(email, batchId);
       if (token) {
         setNewToken(token);
         // Refresh tokens list
         const updatedTokens = await getTokens();
         setTokens(updatedTokens);
         setEmail('');
+        setBatchId('');
       }
     } catch (error) {
       console.error('Failed to create token:', error);
@@ -88,6 +113,17 @@ export default function TokenManagement() {
     }
   };
 
+  // Get batch name by ID
+  const getBatchName = (batchId: string) => {
+    const batch = batches.find(b => b.id === batchId);
+    return batch ? `${batch.name} (${batch.type})` : 'Unknown Batch';
+  };
+
+  const handleBatchChange = (value: string) => {
+    setBatchId(value);
+    console.log(value);
+  };
+
   return (
     <div className="container max-w-5xl py-8">
       <h1 className="text-3xl font-bold mb-8">HR Token Management</h1>
@@ -112,6 +148,26 @@ export default function TokenManagement() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="batch">Select Batch</Label>
+                <Select
+                  onValueChange={handleBatchChange}
+                  value={batchId}
+                  required
+                >
+                  <SelectTrigger id="batch">
+                    <SelectValue placeholder="Choose a batch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {batches.map(batch => (
+                      <SelectItem key={batch.id} value={batch.id.toString()}>
+                        {batch.name} ({batch.type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
@@ -133,6 +189,9 @@ export default function TokenManagement() {
                 <h3 className="font-medium mb-2">New Token Created</h3>
                 <p className="text-sm mb-2">
                   Token for <strong>{newToken.email}</strong>
+                </p>
+                <p className="text-sm mb-2">
+                  Batch: <strong>{getBatchName(newToken.batchId)}</strong>
                 </p>
                 <p className="text-sm mb-4">
                   Expires {formatExpiration(newToken.expiresAt)}
@@ -175,6 +234,7 @@ export default function TokenManagement() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Email</TableHead>
+                      <TableHead>Batch</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Created</TableHead>
                       <TableHead>Expires</TableHead>
@@ -185,6 +245,9 @@ export default function TokenManagement() {
                       <TableRow key={token.id}>
                         <TableCell className="font-medium">
                           {token.email}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {getBatchName(token.batchId)}
                         </TableCell>
                         <TableCell>
                           {token.isUsed ? (
