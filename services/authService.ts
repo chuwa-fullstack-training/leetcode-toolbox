@@ -32,16 +32,31 @@ export const authService = {
       throw new Error(authError?.message || 'Failed to create user');
     }
 
+    // split name into first and last name
+    // if name is only one word, set first and last name to the same value
+    let firstName = '';
+    let lastName = '';
+    const nameParts = name.split(' ');
+    if (nameParts.length > 1) {
+      firstName = nameParts[0];
+      lastName = nameParts.slice(1).join(' ');
+    } else {
+      firstName = name;
+      lastName = name;
+    }
+
     // Create user profile in our users table with batch_id
     const { data: userData, error: userError } = await supabase
-      .from('users')
+      .from('profile')
       .insert([
         {
-          id: authData.user.id,
+          user_id: authData.user.id,
           email,
-          name,
+          firstname: firstName,
+          lastname: lastName,
           batch_id: tokenData.batchId,
-          onboarding_completed: false
+          onboarding_completed: false,
+          type: 'trainee'
         }
       ])
       .select()

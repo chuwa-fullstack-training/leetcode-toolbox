@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -20,10 +21,26 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { Loader2, Send, CheckCircle, XCircle, Copy } from 'lucide-react';
-import { createToken, getTokens, getBatches } from '@/app/staff/tokens/actions';
+import {
+  Loader2,
+  Send,
+  CheckCircle,
+  XCircle,
+  Copy,
+  Mail,
+  MailCheck,
+  AlertCircle
+} from 'lucide-react';
+import {
+  createToken,
+  createTokenAndSendEmail,
+  sendSignupEmail,
+  getTokens,
+  getBatches
+} from '@/app/staff/tokens/actions';
 import { SignupToken } from '@/types/auth';
 import { formatDistance } from 'date-fns';
+import { toast } from 'sonner';
 
 // Type for batches
 type Batch = {
@@ -35,12 +52,16 @@ type Batch = {
 export default function TokenManagement() {
   const [email, setEmail] = useState('');
   const [batchId, setBatchId] = useState('');
+  const [sendEmail, setSendEmail] = useState(true); // Default to sending email
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tokens, setTokens] = useState<SignupToken[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newToken, setNewToken] = useState<SignupToken | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [sendingEmailFor, setSendingEmailFor] = useState<string | null>(null);
 
   // Load tokens and batches on page load
   useEffect(() => {
@@ -55,6 +76,7 @@ export default function TokenManagement() {
         setBatches(fetchedBatches);
       } catch (error) {
         console.error('Failed to load data:', error);
+        toast.error('Failed to load data');
       } finally {
         setIsLoading(false);
       }
@@ -67,24 +89,73 @@ export default function TokenManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!batchId) {
-      alert('Please select a batch');
+      toast.error('Please select a batch');
       return;
     }
     setIsSubmitting(true);
+    setNewToken(null);
+    setEmailSent(false);
+    setEmailError(null);
+
     try {
-      const token = await createToken(email, batchId);
-      if (token) {
-        setNewToken(token);
-        // Refresh tokens list
-        const updatedTokens = await getTokens();
-        setTokens(updatedTokens);
-        setEmail('');
-        setBatchId('');
+      if (sendEmail) {
+        // Create token and send email
+        const result = await createTokenAndSendEmail(email, batchId);
+        if (result.token) {
+          setNewToken(result.token);
+          setEmailSent(result.emailSent);
+          if (result.error) {
+            setEmailError(result.error);
+            toast.warning(result.error);
+          } else if (result.emailSent) {
+            toast.success(
+              'Token created and invitation email sent successfully!'
+            );
+          }
+        } else {
+          toast.error(result.error || 'Failed to create token');
+        }
+      } else {
+        // Create token only (no email)
+        const token = await createToken(email, batchId);
+        if (token) {
+          setNewToken(token);
+          toast.success(
+            'Token created successfully! You can send the invitation email later.'
+          );
+        } else {
+          toast.error('Failed to create token');
+        }
       }
+
+      // Refresh tokens list
+      const updatedTokens = await getTokens();
+      setTokens(updatedTokens);
+      setEmail('');
+      setBatchId('');
     } catch (error) {
       console.error('Failed to create token:', error);
+      toast.error('Failed to create token');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Send email for existing token
+  const handleSendEmail = async (tokenId: string) => {
+    setSendingEmailFor(tokenId);
+    try {
+      const result = await sendSignupEmail(tokenId);
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      console.error('Failed to send email:', error);
+      toast.error('Failed to send email');
+    } finally {
+      setSendingEmailFor(null);
     }
   };
 
@@ -100,8 +171,12 @@ export default function TokenManagement() {
       .then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 3000);
+        toast.success('Registration link copied to clipboard');
       })
-      .catch(err => console.error('Failed to copy link:', err));
+      .catch(err => {
+        console.error('Failed to copy link:', err);
+        toast.error('Failed to copy link');
+      });
   };
 
   // Format expiration date relative to now
@@ -121,7 +196,6 @@ export default function TokenManagement() {
 
   const handleBatchChange = (value: string) => {
     setBatchId(value);
-    console.log(value);
   };
 
   return (
@@ -168,16 +242,30 @@ export default function TokenManagement() {
                 </Select>
               </div>
 
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="send-email"
+                  checked={sendEmail}
+                  onCheckedChange={checked => setSendEmail(checked as boolean)}
+                />
+                <Label
+                  htmlFor="send-email"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Send invitation email immediately
+                </Label>
+              </div>
+
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
+                    {sendEmail ? 'Creating & Sending...' : 'Creating...'}
                   </>
                 ) : (
                   <>
                     <Send className="mr-2 h-4 w-4" />
-                    Create Token
+                    {sendEmail ? 'Create Token & Send Email' : 'Create Token'}
                   </>
                 )}
               </Button>
@@ -186,7 +274,21 @@ export default function TokenManagement() {
             {/* New Token Created */}
             {newToken && (
               <div className="mt-6 p-4 border rounded-md bg-muted">
-                <h3 className="font-medium mb-2">New Token Created</h3>
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-medium">New Token Created</h3>
+                  {emailSent && (
+                    <div className="flex items-center text-green-600 text-xs">
+                      <MailCheck className="h-3 w-3 mr-1" />
+                      Email Sent
+                    </div>
+                  )}
+                  {emailError && (
+                    <div className="flex items-center text-amber-600 text-xs">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Email Failed
+                    </div>
+                  )}
+                </div>
                 <p className="text-sm mb-2">
                   Token for <strong>{newToken.email}</strong>
                 </p>
@@ -197,17 +299,43 @@ export default function TokenManagement() {
                   Expires {formatExpiration(newToken.expiresAt)}
                 </p>
 
+                {emailError && (
+                  <div className="mb-4 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
+                    {emailError}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between bg-card p-2 rounded">
                   <p className="text-xs truncate w-56">
                     {window.location.origin}/sign-up?token={newToken.token}
                   </p>
-                  <Button variant="outline" size="sm" onClick={copyToClipboard}>
-                    {copied ? (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copyToClipboard}
+                    >
+                      {copied ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                    {!emailSent && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSendEmail(newToken.id)}
+                        disabled={sendingEmailFor === newToken.id}
+                      >
+                        {sendingEmailFor === newToken.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Mail className="h-4 w-4" />
+                        )}
+                      </Button>
                     )}
-                  </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -238,6 +366,7 @@ export default function TokenManagement() {
                       <TableHead>Status</TableHead>
                       <TableHead>Created</TableHead>
                       <TableHead>Expires</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -269,6 +398,44 @@ export default function TokenManagement() {
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {formatExpiration(token.expiresAt)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const baseUrl = window.location.origin;
+                                const registrationLink = `${baseUrl}/sign-up?token=${token.token}`;
+                                navigator.clipboard
+                                  .writeText(registrationLink)
+                                  .then(() =>
+                                    toast.success('Link copied to clipboard')
+                                  )
+                                  .catch(() =>
+                                    toast.error('Failed to copy link')
+                                  );
+                              }}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                            {!token.isUsed &&
+                              new Date(token.expiresAt) > new Date() && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleSendEmail(token.id)}
+                                  disabled={sendingEmailFor === token.id}
+                                  title="Send invitation email"
+                                >
+                                  {sendingEmailFor === token.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Mail className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
