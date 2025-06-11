@@ -40,11 +40,8 @@ export const signUpAction = async (formData: FormData) => {
       );
     }
 
-    return encodedRedirect(
-      "success",
-      "/sign-in",
-      "Thanks for signing up! Please check your email for a verification link."
-    );
+    // Return success without redirect - let client handle redirect
+    return { success: true };
   } catch (error: any) {
     console.error("Sign up error:", error);
     return encodedRedirect(

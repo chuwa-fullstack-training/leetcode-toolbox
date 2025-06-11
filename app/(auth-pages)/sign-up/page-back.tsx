@@ -48,7 +48,12 @@ export default async function Signup(props: {
             <Switch id="admin-mode" name="admin" />
             <Label htmlFor="admin-mode">Create as admin user</Label>
           </div> */}
-          <SubmitButton formAction={signUpAction} pendingText="Signing up...">
+          <SubmitButton
+            formAction={(formData: FormData) => {
+              signUpAction(formData);
+            }}
+            pendingText="Signing up..."
+          >
             Sign up
           </SubmitButton>
           <FormMessage message={searchParams} />
