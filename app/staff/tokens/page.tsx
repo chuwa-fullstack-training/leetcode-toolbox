@@ -41,6 +41,7 @@ import {
 import { SignupToken } from '@/types/auth';
 import { formatDistance } from 'date-fns';
 import { toast } from 'sonner';
+import TokenList from './TokenList';
 
 // Type for batches
 type Batch = {
@@ -343,108 +344,14 @@ export default function TokenManagement() {
         </Card>
 
         {/* Tokens List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Active Tokens</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : tokens.length === 0 ? (
-              <p className="text-center py-8 text-muted-foreground">
-                No tokens found
-              </p>
-            ) : (
-              <div className="max-h-[500px] overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Batch</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead>Expires</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tokens.map(token => (
-                      <TableRow key={token.id}>
-                        <TableCell className="font-medium">
-                          {token.email}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {getBatchName(token.batchId)}
-                        </TableCell>
-                        <TableCell>
-                          {token.isUsed ? (
-                            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-500 rounded-full flex items-center w-fit">
-                              <CheckCircle className="h-3 w-3 mr-1" /> Used
-                            </span>
-                          ) : new Date(token.expiresAt) < new Date() ? (
-                            <span className="text-xs px-2 py-1 bg-red-100 text-red-500 rounded-full flex items-center w-fit">
-                              <XCircle className="h-3 w-3 mr-1" /> Expired
-                            </span>
-                          ) : (
-                            <span className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full flex items-center w-fit">
-                              Active
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {new Date(token.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {formatExpiration(token.expiresAt)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const baseUrl = window.location.origin;
-                                const registrationLink = `${baseUrl}/sign-up?token=${token.token}`;
-                                navigator.clipboard
-                                  .writeText(registrationLink)
-                                  .then(() =>
-                                    toast.success('Link copied to clipboard')
-                                  )
-                                  .catch(() =>
-                                    toast.error('Failed to copy link')
-                                  );
-                              }}
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                            {!token.isUsed &&
-                              new Date(token.expiresAt) > new Date() && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleSendEmail(token.id)}
-                                  disabled={sendingEmailFor === token.id}
-                                  title="Send invitation email"
-                                >
-                                  {sendingEmailFor === token.id ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <Mail className="h-3 w-3" />
-                                  )}
-                                </Button>
-                              )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <TokenList
+          tokens={tokens}
+          batches={batches}
+          isLoading={isLoading}
+          sendingEmailFor={sendingEmailFor}
+          handleSendEmail={handleSendEmail}
+          formatExpiration={formatExpiration}
+        />
       </div>
     </div>
   );
