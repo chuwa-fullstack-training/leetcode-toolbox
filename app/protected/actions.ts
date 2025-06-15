@@ -242,37 +242,73 @@ export async function getUserProfile() {
     if (!user) {
       return null;
     }
+
+    console.log('User metadata:', user.user_metadata);
+    console.log('User app metadata:', user.app_metadata);
     
-    // Get user profile from profile table (for batch info)
+    // Get user profile from profile table
     const { data: profile, error } = await supabase
       .from('profile')
-      .select(`
-        *,
-        batch:batch_id (
-          id,
-          name,
-          type
-        )
-      `)
-      .eq('id', user.id)
+      .select('*')
+      .eq('user_id', user.id)
       .single();
     
     if (error) {
       console.error('Error fetching user profile:', error);
       return null;
     }
+
+    console.log('Profile from database:', profile);
     
-    // Extract roles from user metadata
+    // Get batch info only if user has a batch_id (trainees have batch_id, trainers don't)
+    let batchInfo = null;
+    if (profile?.batch_id) {
+      const { data: batch, error: batchError } = await supabase
+        .from('batch')
+        .select('id, name, type')
+        .eq('id', profile.batch_id)
+        .single();
+      
+      if (!batchError && batch) {
+        batchInfo = batch;
+      }
+    }
+    
+    // Extract roles from user metadata (check both lowercase and uppercase)
     const userRoles = user.user_metadata?.roles || [];
+    console.log('User roles from metadata:', userRoles);
     
-    // Return profile with roles from metadata
+    // Check role from profile table (uppercase) and user metadata (could be lowercase or uppercase)
+    const isStaff = 
+      profile?.role === 'STAFF' || 
+      userRoles.includes('staff') || 
+      userRoles.includes('STAFF') ||
+      user.app_metadata?.role === 'admin' ||
+      user.user_metadata?.role === 'admin' ||
+      user.app_metadata?.is_admin === true ||
+      user.user_metadata?.is_admin === true;
+      
+    const isTrainee = 
+      profile?.role === 'TRAINEE' || 
+      userRoles.includes('trainee') || 
+      userRoles.includes('TRAINEE');
+      
+    const isTrainer = 
+      profile?.role === 'TRAINER' || 
+      userRoles.includes('trainer') || 
+      userRoles.includes('TRAINER');
+
+    console.log('Role flags - isStaff:', isStaff, 'isTrainee:', isTrainee, 'isTrainer:', isTrainer);
+    
+    // Return profile with roles from metadata and batch info (if available)
     return {
       ...profile,
+      batch: batchInfo, // This will be null for trainers, which is expected
       roles: userRoles,
       // For backward compatibility, set individual role flags
-      isStaff: userRoles.includes('staff'),
-      isTrainee: userRoles.includes('trainee'),
-      isTrainer: userRoles.includes('trainer')
+      isStaff,
+      isTrainee,
+      isTrainer
     };
   } catch (error) {
     console.error('Error fetching user profile:', error);
