@@ -1,11 +1,11 @@
 'use client';
 
-import GlobalSidebar from '@/components/global-sidebar';
+import { AppSidebar } from '@/components/app-sidebar';
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
 }
 
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
-  return <GlobalSidebar>{children}</GlobalSidebar>;
+  return <AppSidebar>{children}</AppSidebar>;
 }

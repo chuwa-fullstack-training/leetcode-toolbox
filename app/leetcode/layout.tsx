@@ -1,6 +1,6 @@
 'use client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import GlobalSidebar from '@/components/global-sidebar';
+import { AppSidebar } from '@/components/app-sidebar';
 
 export default function LeetcodeLayout({
   children
@@ -11,7 +11,7 @@ export default function LeetcodeLayout({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <GlobalSidebar>{children}</GlobalSidebar>
+      <AppSidebar>{children}</AppSidebar>
     </QueryClientProvider>
   );
 }
