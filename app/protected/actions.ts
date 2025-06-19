@@ -243,9 +243,6 @@ export async function getUserProfile() {
       return null;
     }
 
-    console.log('User metadata:', user.user_metadata);
-    console.log('User app metadata:', user.app_metadata);
-    
     // Get user profile from profile table
     const { data: profile, error } = await supabase
       .from('profile')
@@ -258,8 +255,6 @@ export async function getUserProfile() {
       return null;
     }
 
-    console.log('Profile from database:', profile);
-    
     // Get batch info only if user has a batch_id (trainees have batch_id, trainers don't)
     let batchInfo = null;
     if (profile?.batch_id) {

@@ -27,7 +27,7 @@ export default function Page() {
     <div className="container mx-auto py-10 w-full">
       {isLoading ? (
         <div className="flex justify-center items-center h-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900 dark:border-white"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gray-900 dark:border-white" />
         </div>
       ) : (
         progress && <LeetCodeAnalysis progress={progress} />
@@ -35,17 +35,3 @@ export default function Page() {
     </div>
   );
 }
-
-// export default async function Page({
-//   searchParams
-// }: {
-//   searchParams: { id: string };
-// }) {
-//   const userId = searchParams.id;
-//   const { questions } = await getLeetcodeProgress(userId!);
-//   return (
-//     <div className="container mx-auto py-10 w-full">
-//       <LeetCodeAnalysis progress={questions} />
-//     </div>
-//   );
-// }
